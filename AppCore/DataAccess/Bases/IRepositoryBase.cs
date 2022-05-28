@@ -11,11 +11,11 @@ namespace AppCore.DataAccess.Bases
     public interface IRepositoryBase<TEntity, TDbContext>: IDisposable where TEntity : RecordBase, new() where TDbContext : DbContext, new()
     {
         TDbContext DbContext { get; set; }
-        IQueryable<TEntity> Query();
+        IQueryable<TEntity> Query(); 
 
-        void Add(TEntity entity);
-        void Update(TEntity entity);
-        void Delete(TEntity entity, bool softDelete = false);
+        void Add(TEntity entity,bool save =true);
+        void Update(TEntity entity, bool save = true);
+        void Delete(TEntity entity, bool softDelete = false, bool save = true);
         int Save();
 
     }
