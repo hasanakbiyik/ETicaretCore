@@ -17,6 +17,8 @@ namespace AppCore.DataAccess.Bases.EntityFramework
         }
         public void Add(TEntity entity , bool save = true)
         {
+            entity.Guid = Guid.NewGuid().ToString();
+            entity.CreateDate = DateTime.Now;
             DbContext.Set<TEntity>().Add(entity);
 
             if (save)
@@ -30,7 +32,6 @@ namespace AppCore.DataAccess.Bases.EntityFramework
             if (softDelete)
             {
                 entity.IsDeleted = true;
-                entity.UpdateDate = DateTime.Now;
                 Update(entity,save);
             }
             DbContext.Set<TEntity>().Remove(entity);
@@ -39,15 +40,31 @@ namespace AppCore.DataAccess.Bases.EntityFramework
                 Save();
             }
         }
+        public virtual void DeleteEntity(int id, bool save =true,bool softDelete = false)
+        {
+            var entity = DbContext.Set<TEntity>().SingleOrDefault(e => e.Id == id);
+            Delete(entity,save,softDelete);
+        }
+
+        public virtual void DeleteEntity(string guid, bool save = true, bool softDelete = false)
+        {
+            var entity = DbContext.Set<TEntity>().SingleOrDefault(e => e.Guid == guid);
+            Delete(entity, save, softDelete);
+        }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            DbContext?.Dispose();
         }
 
         public IQueryable<TEntity> Query()
         {
-            return DbContext.Set<TEntity>().AsQueryable();
+            var query = DbContext.Set<TEntity>().AsQueryable();
+            // Sadece silinmemiş kayıtları getirir.
+            // query = query.Where(q => q.IsDeleted == null || q.IsDeleted == false);
+            query = query.Where(q => q.IsDeleted ?? false == false);
+
+            return query;   
         }
         public virtual IQueryable<TEntity>EntityQuery(params string[] entitiesToInclude)
         {
@@ -65,6 +82,8 @@ namespace AppCore.DataAccess.Bases.EntityFramework
             query = query.Where(predicate);
             return query;
         }
+        
+
         public int Save()
         {
             return DbContext.SaveChanges();
@@ -72,6 +91,7 @@ namespace AppCore.DataAccess.Bases.EntityFramework
 
         public void Update(TEntity entity, bool save = true)
         {
+            entity.UpdateDate = DateTime.Now;
             DbContext.Set<TEntity>().Update(entity);
             if (save)
             {
